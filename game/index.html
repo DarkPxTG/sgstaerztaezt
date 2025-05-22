@@ -1,208 +1,94 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>پوپ مدرن 💩</title>
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <title>Mini FPS Game</title>
   <style>
-    /* استایل‌ها بدون تغییر */
-    body {
-      margin: 0;
-      font-family: 'Vazirmatn', sans-serif;
-      background: linear-gradient(to bottom, #2b2b2b, #1e1e1e);
-      color: #f0f0f0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-
-    h1 {
-      font-size: 2.4rem;
-      margin-bottom: 20px;
-      color: #00ffcc;
-      text-shadow: 0 0 10px rgba(0, 255, 204, 0.7);
-      text-align: center;
-    }
-
-    .card {
-      background: #1f1f1f;
-      border-radius: 20px;
-      padding: 25px;
-      width: 100%;
-      max-width: 400px;
-      box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      margin-bottom: 30px;
-    }
-
-    .info {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #2a2a2a;
-      padding: 10px 15px;
-      border-radius: 12px;
-      font-size: 16px;
-    }
-
-    .info span, .info b {
-      color: #ccc;
-    }
-
-    input[type="number"] {
-      padding: 8px;
-      border: none;
-      border-radius: 10px;
-      background: #333;
-      color: #fff;
-      width: 100px;
-      text-align: center;
-      font-size: 16px;
-    }
-
-    .buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .btn {
-      background: #00ffcc;
-      color: #000;
-      padding: 12px;
-      border: none;
-      border-radius: 15px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
-      font-weight: bold;
-    }
-
-    .btn:hover {
-      background: #00e6b8;
-      transform: scale(1.05);
-    }
-
-    .btn.secondary {
-      background: #444;
-      color: #fff;
-      box-shadow: none;
-    }
-
-    .btn.secondary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    #grid {
-      display: grid;
-      grid-template-columns: repeat(5, 65px);
-      gap: 12px;
-      margin-top: 10px;
-    }
-
-    .cell {
-      width: 65px;
-      height: 65px;
-      background: #2a2a2a;
-      border: 2px solid #444;
-      border-radius: 12px;
-      font-size: 28px;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .cell:hover {
-      background: #333;
-      transform: scale(1.05);
-    }
-
-    .revealed {
-      background: #444 !important;
-      cursor: default;
-    }
-
-    .bomb {
-      background: #ff0033 !important;
-    }
-
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 2rem;
-      }
-
-      .cell {
-        width: 55px;
-        height: 55px;
-        font-size: 22px;
-      }
-
-      #grid {
-        grid-template-columns: repeat(5, 55px);
-        gap: 10px;
-      }
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      font-family: Arial;
+      z-index: 10;
     }
   </style>
 </head>
 <body>
+  <div id="hud">Health: 100 | Ammo: 30</div>
 
-  <h1>💩 بازی پوپ حرفه‌ای</h1>
-
-  <div class="card">
-    <div class="info">
-      <span>💰 موجودی:</span>
-      <b id="balance">500000</b><span> تومان</span>
-    </div>
-    <div class="info">
-      <span>🎯 مبلغ شرط:</span>
-      <input type="number" id="bet" value="10000">
-    </div>
-    <div class="info">
-      <span>📈 ضریب:</span>
-      <b id="multiplier">1.2</b><span> ×</span>
-    </div>
-    <div class="info">
-      <span>💵 سود احتمالی:</span>
-      <b id="potential">0</b><span> تومان</span>
-    </div>
-
-    <div class="buttons">
-      <button class="btn" onclick="startGame()">🎮 شروع بازی</button>
-      <button class="btn secondary" id="cashout" onclick="cashOut()" disabled>💸 برداشت</button>
-    </div>
-  </div>
-
-  <div id="grid"></div>
-
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.161.0/examples/js/controls/PointerLockControls.js"></script>
   <script>
-    const betEl = document.getElementById("bet");
+    window.addEventListener('load', () => {
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x202020);
 
-    function startGame() {
-      const bet = parseInt(betEl.value);
-      if (bet <= 0) {
-        alert("مبلغ شرط معتبر نیست!");
-        return;
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.y = 2;
+
+      const renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(5, 10, 7.5);
+      scene.add(light);
+
+      const floorGeometry = new THREE.PlaneGeometry(200, 200);
+      const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x444444 });
+      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+      floor.rotation.x = -Math.PI / 2;
+      scene.add(floor);
+
+      const crateGeometry = new THREE.BoxGeometry(2, 2, 2);
+      const crateMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+      for (let i = 0; i < 10; i++) {
+        const crate = new THREE.Mesh(crateGeometry, crateMaterial);
+        crate.position.set(Math.random() * 100 - 50, 1, Math.random() * 100 - 50);
+        scene.add(crate);
       }
 
-      // ذخیره مبلغ شرط در حافظه لوکال (اختیاری)
-      localStorage.setItem("betAmount", bet);
+      const controls = new THREE.PointerLockControls(camera, document.body);
+      document.body.addEventListener('click', () => controls.lock());
 
-      // هدایت به صفحه جدول
-      window.location.href = "jadval.html";
-    }
+      const move = { forward: false, back: false, left: false, right: false };
+      const velocity = new THREE.Vector3();
 
-    function cashOut() {
-      alert("برداشت در این نسخه غیرفعاله.");
-    }
+      document.addEventListener('keydown', e => {
+        if (e.code === 'KeyW') move.forward = true;
+        if (e.code === 'KeyS') move.back = true;
+        if (e.code === 'KeyA') move.left = true;
+        if (e.code === 'KeyD') move.right = true;
+      });
+
+      document.addEventListener('keyup', e => {
+        if (e.code === 'KeyW') move.forward = false;
+        if (e.code === 'KeyS') move.back = false;
+        if (e.code === 'KeyA') move.left = false;
+        if (e.code === 'KeyD') move.right = false;
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const speed = 0.2;
+        velocity.set(0, 0, 0);
+        if (move.forward) velocity.z -= speed;
+        if (move.back) velocity.z += speed;
+        if (move.left) velocity.x -= speed;
+        if (move.right) velocity.x += speed;
+
+        controls.moveRight(velocity.x);
+        controls.moveForward(velocity.z);
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    });
   </script>
-
 </body>
 </html>
